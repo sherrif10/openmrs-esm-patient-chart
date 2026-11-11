@@ -56,6 +56,7 @@ import {
   updateVisitNote,
   useVisitNotes,
 } from './visit-notes.resource';
+import { getDefaultVisitNoteDate, getVisitNoteDatetime } from './visit-note-date';
 import styles from './visit-notes-form.scss';
 
 type VisitNotesFormData = Omit<z.infer<ReturnType<typeof createSchema>>, 'images'> & {
@@ -101,7 +102,7 @@ export interface VisitNotesFormProps {
 const VisitNotesForm: React.FC<PatientWorkspace2DefinitionProps<VisitNotesFormProps, {}>> = ({
   closeWorkspace,
   workspaceProps: { formContext, encounter },
-  groupProps: { patientUuid, patient },
+  groupProps: { patientUuid, patient, visitContext },
 }) => {
   const isEditing: boolean = Boolean(formContext === 'editing' && encounter?.id);
   const searchTimeoutInMs = 500;
@@ -160,7 +161,7 @@ const VisitNotesForm: React.FC<PatientWorkspace2DefinitionProps<VisitNotesFormPr
     resolver: customResolver,
     defaultValues: {
       primaryDiagnosisSearch: '',
-      noteDate: isEditing ? new Date(encounter.rawDatetime) : new Date(),
+      noteDate: isEditing ? new Date(encounter.rawDatetime) : getDefaultVisitNoteDate(visitContext),
       clinicalNote: isEditing
         ? String(encounter?.obs?.find((obs) => obs.concept.uuid === encounterNoteTextConceptUuid)?.value || '')
         : '',
@@ -355,16 +356,12 @@ const VisitNotesForm: React.FC<PatientWorkspace2DefinitionProps<VisitNotesFormPr
         return;
       }
 
-      let finalNoteDate = dayjs(noteDate);
-      const now = new Date();
-      if (finalNoteDate.diff(now, 'minute') <= 30) {
-        finalNoteDate = null;
-      }
+      const noteDatetime = getVisitNoteDatetime(noteDate, visitContext, isEditing);
 
       const existingClinicalNoteObs = encounter?.obs?.find((obs) => obs.concept.uuid === encounterNoteTextConceptUuid);
 
       const visitNotePayload: VisitNotePayload = {
-        encounterDatetime: finalNoteDate?.format(),
+        encounterDatetime: noteDatetime ? dayjs(noteDatetime).format() : undefined,
         form: formConceptUuid,
         patient: patientUuid,
         location: locationUuid,
@@ -384,6 +381,9 @@ const VisitNotesForm: React.FC<PatientWorkspace2DefinitionProps<VisitNotesFormPr
               },
             ]
           : [],
+        // Attach a new note to the visit open in the chart (a past visit during retrospective entry).
+        // On edit, leave the note in the visit it already belongs to.
+        ...(!isEditing && visitContext?.uuid && { visit: visitContext.uuid }),
       };
 
       const abortController = new AbortController();
@@ -492,6 +492,7 @@ const VisitNotesForm: React.FC<PatientWorkspace2DefinitionProps<VisitNotesFormPr
       providerUuid,
       selectedPrimaryDiagnoses.length,
       t,
+      visitContext,
     ],
   );
 
@@ -531,7 +532,10 @@ const VisitNotesForm: React.FC<PatientWorkspace2DefinitionProps<VisitNotesFormPr
                         invalidText={fieldState?.error?.message}
                         isDisabled={isEditing}
                         labelText={t('visitDate', 'Visit date')}
-                        maxDate={new Date()}
+                        minDate={
+                          visitContext?.startDatetime ? dayjs(visitContext.startDatetime).startOf('day').toDate() : undefined
+                        }
+                        maxDate={visitContext?.stopDatetime ? new Date(visitContext.stopDatetime) : new Date()}
                       />
                     </ResponsiveWrapper>
                   )}
