@@ -269,6 +269,7 @@ describe('VitalsBiometricsForm', () => {
         },
         abort: expect.any(Function),
       }),
+      null,
     );
 
     expect(mockShowSnackbar).toHaveBeenCalledTimes(1);
@@ -354,6 +355,7 @@ describe('VitalsBiometricsForm', () => {
         },
         abort: expect.any(Function),
       }),
+      null,
     );
 
     expect(mockShowSnackbar).toHaveBeenCalledTimes(1);

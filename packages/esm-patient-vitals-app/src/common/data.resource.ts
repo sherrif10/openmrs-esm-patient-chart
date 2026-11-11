@@ -7,6 +7,7 @@ import {
   openmrsFetch,
   useConfig,
   type OpenmrsResource,
+  type Visit,
 } from '@openmrs/esm-framework';
 import useSWRImmutable from 'swr/immutable';
 import useSWRInfinite from 'swr/infinite';
@@ -488,6 +489,7 @@ export function createOrUpdateVitalsAndBiometrics(
   location: string,
   vitalsAndBiometricsObs: Array<OpenmrsResource>,
   abortController: AbortController,
+  visit?: Visit | null,
 ) {
   const url = encounterUuid ? `${restBaseUrl}/encounter/${encounterUuid}` : `${restBaseUrl}/encounter`;
 
@@ -498,6 +500,14 @@ export function createOrUpdateVitalsAndBiometrics(
   if (!encounterUuid) {
     encounter['location'] = location;
     encounter['encounterType'] = encounterTypeUuid;
+    // Attach new vitals to the visit open in the chart. Vitals keyed in for a past visit (retrospective
+    // entry) are dated at the start of that visit; the server still records the entry time in dateCreated.
+    if (visit?.uuid) {
+      encounter['visit'] = visit.uuid;
+    }
+    if (visit?.stopDatetime && visit?.startDatetime) {
+      encounter['encounterDatetime'] = visit.startDatetime;
+    }
   }
   return openmrsFetch(url, {
     method: 'POST',
