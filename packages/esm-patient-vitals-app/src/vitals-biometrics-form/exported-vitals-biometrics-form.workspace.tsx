@@ -197,6 +197,7 @@ const ExportedVitalsAndBiometricsForm: React.FC<Workspace2DefinitionProps<Vitals
           session?.sessionLocation?.uuid,
           [...newObs, ...toBeVoided],
           abortController,
+          visitContext,
         )
           .then(() => {
             if (mutateEncounter) {
@@ -246,6 +247,7 @@ const ExportedVitalsAndBiometricsForm: React.FC<Workspace2DefinitionProps<Vitals
       patientUuid,
       session?.sessionLocation?.uuid,
       t,
+      visitContext,
     ],
   );
 
