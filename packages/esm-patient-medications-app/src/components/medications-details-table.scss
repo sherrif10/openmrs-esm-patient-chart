@@ -74,3 +74,26 @@
   border: none;
   text-transform: uppercase;
 }
+
+// MediHealth: medications grouped by prescription (visit encounter)
+.visitGroupRow td {
+  background-color: colors.$gray-10 !important;
+  border-top: 1px solid colors.$gray-20 !important;
+}
+
+.visitGroupHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: layout.$spacing-03;
+  padding: layout.$spacing-02 0;
+}
+
+.visitGroupDate {
+  @include type.type-style('heading-compact-01');
+}
+
+.visitGroupMeta {
+  @include type.type-style('body-compact-01');
+  color: colors.$gray-70;
+}
