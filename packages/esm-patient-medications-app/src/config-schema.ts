@@ -31,6 +31,12 @@ export const configSchema = {
     _default: 300,
     _validators: [validator((v: unknown) => typeof v === 'number' && v > 0, 'Must be greater than zero')],
   },
+  groupMedicationsByVisit: {
+    _type: Type.Boolean,
+    _default: false,
+    _description:
+      'Show the active and past medications tables as one block per prescription (visit encounter), with its date and prescriber shown once and the drugs listed under it. The newest prescription starts open, older ones closed, and pages count prescriptions. When false, one row per drug as before.',
+  },
   requireIndication: {
     _type: Type.Boolean,
     _description: 'Whether to require an indication when placing a medication order',
@@ -47,4 +53,5 @@ export interface ConfigObject {
   showPrintButton: boolean;
   debounceDelayInMs: number;
   requireIndication: boolean;
+  groupMedicationsByVisit: boolean;
 }
