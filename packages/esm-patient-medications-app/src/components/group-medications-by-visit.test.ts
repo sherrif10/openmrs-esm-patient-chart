@@ -7,11 +7,12 @@ function order(
   encounterUuid: string | null,
   dateActivated: string,
   orderer = 'Dr Ade',
+  visitUuid?: string,
 ): Order {
   return {
     uuid,
     drug: { display: drug },
-    encounter: encounterUuid ? { uuid: encounterUuid } : undefined,
+    encounter: encounterUuid ? { uuid: encounterUuid, visit: visitUuid ? { uuid: visitUuid } : undefined } : undefined,
     dateActivated,
     orderer: { person: { display: orderer } },
   } as unknown as Order;
@@ -62,13 +63,35 @@ describe('groupMedicationsByVisit', () => {
     expect(groups[1].medications).toHaveLength(2);
   });
 
-  test('two visits on the same day stay separate prescriptions', () => {
+  test('drugs saved in several goes during one visit form one group', () => {
     const groups = groupMedicationsByVisit([
-      order('1', 'A', 'enc-morning', '2026-11-16T08:00:00.000+0000'),
-      order('2', 'B', 'enc-evening', '2026-11-16T18:00:00.000+0000'),
+      order('1', 'Paracetamol', 'enc-first-save', '2026-11-11T12:25:00.000+0000', 'Dr Ade', 'visit-1'),
+      order('2', 'Vit C', 'enc-second-save', '2026-11-11T12:25:30.000+0000', 'Dr Ade', 'visit-1'),
+      order('3', 'Amoxicillin', 'enc-third-save', '2026-11-11T13:09:00.000+0000', 'Dr Ade', 'visit-1'),
     ]);
 
-    expect(groups.map((g) => g.key)).toEqual(['enc-evening', 'enc-morning']);
+    expect(groups).toHaveLength(1);
+    expect(groups[0].key).toBe('visit-1');
+    expect(groups[0].dateActivated).toBe('2026-11-11T12:25:00.000+0000');
+    expect(groups[0].medications.map((m) => m.drug.display)).toEqual(['Amoxicillin', 'Paracetamol', 'Vit C']);
+  });
+
+  test('two visits on the same day stay separate prescriptions', () => {
+    const groups = groupMedicationsByVisit([
+      order('1', 'A', 'enc-morning', '2026-11-16T08:00:00.000+0000', 'Dr Ade', 'visit-morning'),
+      order('2', 'B', 'enc-evening', '2026-11-16T18:00:00.000+0000', 'Dr Ade', 'visit-evening'),
+    ]);
+
+    expect(groups.map((g) => g.key)).toEqual(['visit-evening', 'visit-morning']);
+  });
+
+  test('falls back to the encounter when an order has no visit', () => {
+    const groups = groupMedicationsByVisit([
+      order('1', 'A', 'enc-1', '2026-11-16T08:00:00.000+0000'),
+      order('2', 'B', 'enc-2', '2026-11-16T08:05:00.000+0000'),
+    ]);
+
+    expect(groups.map((g) => g.key)).toEqual(['enc-2', 'enc-1']);
   });
 
   test('groups orders without an encounter by the day they were started', () => {

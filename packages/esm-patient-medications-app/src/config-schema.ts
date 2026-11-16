@@ -35,7 +35,7 @@ export const configSchema = {
     _type: Type.Boolean,
     _default: false,
     _description:
-      'Show the active and past medications tables as one block per prescription (visit encounter), with its date and prescriber shown once and the drugs listed under it. The newest prescription starts open, older ones closed, and pages count prescriptions. When false, one row per drug as before.',
+      'Show the active and past medications tables as one block per visit, with its date and prescriber shown once and the drugs listed under it. The newest prescription starts open, older ones closed, and pages count prescriptions. When false, one row per drug as before.',
   },
   requireIndication: {
     _type: Type.Boolean,

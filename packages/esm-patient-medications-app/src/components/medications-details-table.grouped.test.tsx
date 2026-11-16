@@ -7,8 +7,8 @@ import { mockPatient, renderWithSwr, waitForLoadingToFinish } from 'tools';
 import { configSchema, type ConfigObject } from '../config-schema';
 import ActiveMedications from '../active-medications/active-medications.component';
 
-// MediHealth: with groupMedicationsByVisit on, the medications table shows one block per prescription
-// (visit encounter) with its date and prescriber once, instead of repeating them on every drug.
+// MediHealth: with groupMedicationsByVisit on, the medications table shows one block per visit with its
+// date and prescriber once, instead of repeating them on every drug.
 
 const mockOpenmrsFetch = openmrsFetch as jest.Mock;
 const mockUseConfig = jest.mocked(useConfig<ConfigObject>);
@@ -104,6 +104,23 @@ describe('Medications grouped by prescription', () => {
     await user.click(within(newest).getByRole('button', { name: /hide medications prescribed on 14-Aug-2023/i }));
     expect(screen.queryByText(/Sulfacetamide 0.1/i)).not.toBeInTheDocument();
     expect(screen.getByText(/Aspirin 162.5mg/i)).toBeInTheDocument();
+  });
+
+  test('drugs saved in separate goes during the same visit show as one block', async () => {
+    const VISIT = '1f2e3d4c-0000-4000-8000-000000000009';
+    // each order in its own encounter (separate order basket saves), all in one visit
+    const sameVisit = mockPatientDrugOrdersApiData.map((order, i) => ({
+      ...order,
+      encounter: { uuid: `0a1b2c3d-0000-4000-8000-00000000001${i}`, display: 'Order', visit: { uuid: VISIT } },
+    }));
+    mockOpenmrsFetch.mockReturnValueOnce({ data: { results: sameVisit } });
+
+    renderGrouped();
+    await waitForLoadingToFinish();
+
+    const groups = screen.getAllByTestId('medication-visit-group');
+    expect(groups).toHaveLength(1);
+    expect(groups[0]).toHaveTextContent(/4 drug\(s\)/);
   });
 
   test('keeps one row per drug with a start date column when the setting is off', async () => {

@@ -88,7 +88,7 @@ const MedicationsDetailsTable: React.FC<MedicationsDetailsTableProps> = ({
   const { orders, setOrders } = useOrderBasket<DrugOrderBasketItem>(patient, 'medications');
   const { results, goTo, currentPage } = usePagination(medications, pageSize);
 
-  // MediHealth: one block per prescription (visit encounter), its date and prescriber shown once.
+  // MediHealth: one block per visit, its date and prescriber shown once.
   // Pages count prescriptions, so a prescription is never split across pages.
   const groupByVisit = config.groupMedicationsByVisit === true;
   const groups = useMemo(() => groupMedicationsByVisit(medications), [medications]);
